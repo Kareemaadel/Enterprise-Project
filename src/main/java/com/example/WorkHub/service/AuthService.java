@@ -7,6 +7,7 @@ import com.example.WorkHub.model.User;
 import com.example.WorkHub.repository.TenantRepository;
 import com.example.WorkHub.repository.UserRepository;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import com.example.WorkHub.jwt.TenantAuthenticationToken;
 import org.springframework.http.HttpStatus;
@@ -34,7 +35,7 @@ public class AuthService {
         this.jwtUtil = jwtUtil;
     }
 
-    public String register(String email, String password, String tenantIdValue) {
+    public String register(String email, String password, String tenantIdValue, String role) {
 
         if (userRepository.existsByEmail(email)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "User already exists");
@@ -54,11 +55,12 @@ public class AuthService {
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(password)); // hash
         user.setTenant(tenant);
+        user.setRole(role);
 
         userRepository.save(user);
 
         String tenantIdClaim = user.getTenant() != null ? user.getTenant().getId().toString() : null;
-        return jwtUtil.generateToken(email, tenantIdClaim);
+        return jwtUtil.generateToken(email, tenantIdClaim,role);
     }
 
     public String login(String email, String password) {
@@ -71,7 +73,8 @@ public class AuthService {
         }
 
         String tenantId = user.getTenant() != null ? user.getTenant().getId().toString() : null;
-        return jwtUtil.generateToken(email, tenantId);
+        String role = user.getRole();
+        return jwtUtil.generateToken(email, tenantId, role);
     }
 
     public AuthMeResponse me(String email) {
@@ -80,13 +83,21 @@ public class AuthService {
         }
 
         UUID tenantId = null;
+        String tenantRole = null;
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth instanceof TenantAuthenticationToken tenantAuth) {
             tenantId = tenantAuth.getTenantId();
+            tenantRole = tenantAuth.getAuthorities()
+                    .stream()
+                    .findFirst()
+                    .map(GrantedAuthority::getAuthority)
+                    .orElse(null);
         }
 
         return new AuthMeResponse(
                 email,
-                tenantId);
+                tenantId,
+                tenantRole
+                );
     }
 }

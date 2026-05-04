@@ -19,6 +19,9 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    @Column(nullable = false)
+    private String role;
+
     @ManyToOne
     // @JoinColumn(name = "tenant_id", nullable = false) this is off for the same
     // reason as project.java
@@ -59,4 +62,10 @@ public class User {
     public void setTenant(Tenant tenant) {
         this.tenant = tenant;
     }
+
+    public void setRole(String role){
+        this.role = role;
+    }
+
+    public String getRole(){return role;}
 }

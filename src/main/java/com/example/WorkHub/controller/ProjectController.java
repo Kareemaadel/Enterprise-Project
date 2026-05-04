@@ -9,6 +9,7 @@ import com.example.WorkHub.service.TaskService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,6 +28,7 @@ public class ProjectController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('TENANT_ADMIN')")
     public ResponseEntity<Project> createProject(@Valid @RequestBody ProjectCreateRequest request) {
         Project project = projectService.createProject(request.name(), request.createdBy());
         return new ResponseEntity<>(project, HttpStatus.CREATED);

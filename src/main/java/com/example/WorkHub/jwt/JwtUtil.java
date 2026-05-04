@@ -4,6 +4,7 @@ import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,6 +20,8 @@ public class JwtUtil {
 
     private static final String TENANT_ID_CLAIM = "tenantId";
 
+    private static final String TENANT_ROLE_CLAIM = "tenantRole";
+
     @Value("${jwt.secret}")
     private String jwtSecret;
 
@@ -33,10 +36,10 @@ public class JwtUtil {
     }
 
     public String generateToken(String username) {
-        return generateToken(username, null);
+        return generateToken(username, null, null);
     }
 
-    public String generateToken(String username, String tenantId) {
+    public String generateToken(String username, String tenantId, String role) {
         JwtBuilder builder = Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(new Date())
@@ -45,6 +48,12 @@ public class JwtUtil {
         if (tenantId != null && !tenantId.isBlank()) {
             builder.claim(TENANT_ID_CLAIM, tenantId);
         }
+
+        if(role == null || (!role.equals("TENANT_ADMIN") && !role.equals("TENANT_USER"))){
+            return null;
+        }
+
+        builder.claim(TENANT_ROLE_CLAIM, role);
 
         return builder
                 .signWith(key, SignatureAlgorithm.HS256)
@@ -57,6 +66,16 @@ public class JwtUtil {
                 .parseClaimsJws(token)
                 .getBody()
                 .get(TENANT_ID_CLAIM);
+
+        return claim != null ? claim.toString() : null;
+    }
+
+    public String getTenantRoleFromToken(String token) {
+        Object claim = Jwts.parserBuilder()
+                .setSigningKey(key).build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get(TENANT_ROLE_CLAIM);
 
         return claim != null ? claim.toString() : null;
     }
