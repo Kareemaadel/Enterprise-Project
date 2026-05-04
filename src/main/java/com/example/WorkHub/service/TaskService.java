@@ -42,7 +42,7 @@ public class TaskService {
     @Transactional
     public Task updateTaskStatus(UUID taskId, TaskStatus newStatus) {
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found"));
+                .orElseThrow(() -> new com.example.WorkHub.exception.ResourceNotFoundException(Task.class, taskId));
 
         TaskStatus currentStatus = task.getStatus();
 

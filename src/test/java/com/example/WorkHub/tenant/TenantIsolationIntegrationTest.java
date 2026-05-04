@@ -30,6 +30,9 @@ public class TenantIsolationIntegrationTest {
     private TenantRepository tenantRepository;
 
     @Autowired
+    private com.example.WorkHub.service.ProjectService projectService;
+
+    @Autowired
     private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     private Tenant tenantA;
@@ -106,5 +109,25 @@ public class TenantIsolationIntegrationTest {
         // Attempt to fetch all projects
         List<Project> allProjectsForB = projectRepository.findAll();
         assertThat(allProjectsForB).isEmpty();
+    }
+
+    @Test
+    void testElaborateTenantError() {
+        // 1. Authenticate as Tenant A and create a project
+        authenticateAsTenant(tenantA.getId());
+        Project projectA = new Project();
+        projectA.setName("Elaborate Test Project");
+        projectA.setCreatedBy("userA");
+        projectA = projectRepository.save(projectA);
+        UUID projectAUuid = projectA.getId();
+
+        // 2. Authenticate as Tenant B
+        authenticateAsTenant(tenantB.getId());
+
+        // 3. Attempt to fetch via Service, expecting ResourceNotFoundException
+        org.junit.jupiter.api.Assertions.assertThrows(
+            com.example.WorkHub.exception.ResourceNotFoundException.class,
+            () -> projectService.getProjectById(projectAUuid)
+        );
     }
 }

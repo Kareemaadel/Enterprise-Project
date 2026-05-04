@@ -41,6 +41,6 @@ public class ProjectService {
     @Transactional(readOnly = true)
     public Project getProjectById(UUID id) {
         return projectRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project not found"));
+                .orElseThrow(() -> new com.example.WorkHub.exception.ResourceNotFoundException(Project.class, id));
     }
 }
