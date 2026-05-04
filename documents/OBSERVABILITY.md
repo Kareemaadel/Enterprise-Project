@@ -30,15 +30,19 @@ Metrics are collected via Micrometer and exposed in a format compatible with Pro
 | **Prometheus** | `/actuator/prometheus` | Metrics formatted for Prometheus scraping. |
 | **Generic Metrics** | `/actuator/metrics` | List of all available metric names. |
 
-### Custom Metric: Report Generation
-We have implemented a custom counter to track report generation per tenant.
-- **Metric Name**: `workhub.reports.generated`
-- **Tags**: `tenantId`
+### Visualizing Metrics (Prometheus & Grafana)
+Metrics are integrated with a monitoring stack including Prometheus for data collection and Grafana for visualization.
 
 ### How to Verify:
-1. Trigger a report generation (via `ReportService`).
-2. Run `curl http://localhost:8080/actuator/prometheus`.
-3. **Expected Result**: Search for `workhub_reports_generated_total` in the output. You should see the count incremented with the corresponding `tenantId`.
+1. **Start the Infrastructure**: Run `docker-compose up -d` to start the monitoring containers (Prometheus & Grafana).
+2. **Start the Application**: Run the `WorkHubApplication.java` main class.
+3. **Check Actuator Output**: Perform a GET request on `http://localhost:8080/actuator/prometheus` to verify metrics are being generated.
+4. **Execute Queries in Prometheus**:
+   - Navigate to `http://localhost:9090` (Prometheus host).
+   - Select any metric from the list and click **Execute** to see the values/graphs.
+5. **Visualization in Grafana**:
+   - Access your Grafana instance.
+   - Use Prometheus as a data source to build dashboards and visualize application performance metrics.
 
 ---
 
