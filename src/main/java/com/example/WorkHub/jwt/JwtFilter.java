@@ -3,6 +3,8 @@ package com.example.WorkHub.jwt;
 import com.example.WorkHub.jwt.JwtUtil;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -12,6 +14,7 @@ import java.util.List;
 
 public class JwtFilter extends OncePerRequestFilter {
 
+    private static final Logger logger = LoggerFactory.getLogger(JwtFilter.class);
     private final JwtUtil jwtUtil;
 
     public JwtFilter(JwtUtil jwtUtil) {
@@ -25,18 +28,18 @@ public class JwtFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
-        System.out.println(request.getRequestURI());
+        logger.info("Request URI: {}", request.getRequestURI());
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
-            System.out.println("token: " + token);
+            logger.info("token: {}", token);
             if (!jwtUtil.validateJwtToken(token)) {
                 response.sendError(HttpServletResponse.SC_FORBIDDEN, "Invalid bearer token");
                 return;
             }
 
             String email = jwtUtil.getEmailFromToken(token);
-            System.out.println("email: " + email);
-            System.out.println("in jwt filter");
+            logger.info("email: {}", email);
+            logger.info("in jwt filter");
 
             String tenantIdClaim = jwtUtil.getTenantIdFromToken(token);
             java.util.UUID tenantId = null;
