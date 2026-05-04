@@ -17,10 +17,13 @@ public class Project {
     @Column(name = "created_by", nullable = false)
     private String createdBy;
 
-    @ManyToOne
-    // @JoinColumn(name = "tenant_id", nullable = false) commented it for now until
-    // we implement the tenant isolation
-    @JoinColumn(name = "tenant_id")
+    @org.hibernate.annotations.TenantId
+    @Convert(converter = com.example.WorkHub.tenant.UuidStringConverter.class)
+    @Column(name = "tenant_id", length = 36)
+    private String tenantId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tenant_id", insertable = false, updatable = false)
     private Tenant tenant;
 
     public Project() {
@@ -54,7 +57,8 @@ public class Project {
         return tenant;
     }
 
-    public void setTenant(Tenant tenant) {
-        this.tenant = tenant;
+    // No public setter for tenantId to prevent manual overriding
+    public String getTenantId() {
+        return tenantId;
     }
 }

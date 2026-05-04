@@ -22,8 +22,13 @@ public class Task {
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
 
-    @ManyToOne
-    @JoinColumn(name = "tenant_id")
+    @org.hibernate.annotations.TenantId
+    @Convert(converter = com.example.WorkHub.tenant.UuidStringConverter.class)
+    @Column(name = "tenant_id", length = 36)
+    private String tenantId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tenant_id", insertable = false, updatable = false)
     private Tenant tenant;
 
     @Version
@@ -68,8 +73,9 @@ public class Task {
         return tenant;
     }
 
-    public void setTenant(Tenant tenant) {
-        this.tenant = tenant;
+    // No public setter for tenantId to prevent manual overriding
+    public String getTenantId() {
+        return tenantId;
     }
 
     public Long getVersion() {

@@ -64,14 +64,10 @@ public class ReportService {
         UUID tenantId = auth.getTenantId();
         String requestedBy = (String) auth.getPrincipal();
 
-        Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found"));
-
         // Create the Job entity in PENDING state
         Job job = new Job();
         job.setStatus("PENDING");
         job.setProject(project);
-        job.setTenant(tenant);
         job = jobRepository.save(job);
 
         // Publish event to Kafka

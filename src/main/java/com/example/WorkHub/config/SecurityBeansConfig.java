@@ -31,13 +31,15 @@ public class SecurityBeansConfig {
     public JwtFilter jwtFilter(JwtUtil jwtUtil) {
         return new JwtFilter(jwtUtil);
     }
-@Bean
+
+    @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
-                                           JwtFilter jwtFilter) throws Exception {
+            JwtFilter jwtFilter) throws Exception {
         logger.info("SecurityFilterChain bean loaded!");
         return http
                 .csrf(AbstractHttpConfigurer::disable)
@@ -46,19 +48,21 @@ public class SecurityBeansConfig {
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                            response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"Authentication is required to access this resource.\"}");
+                            response.getWriter().write(
+                                    "{\"error\": \"Unauthorized\", \"message\": \"Authentication is required to access this resource.\"}");
                         })
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                            response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"You do not have permission to access this resource.\"}");
-                        })
-                )
+                            response.getWriter().write(
+                                    "{\"error\": \"Unauthorized\", \"message\": \"You do not have permission to access this resource.\"}");
+                        }))
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-                        .requestMatchers("/auth/login","/auth/register", "/h2-console", "/h2-console/**", "/health","/WhatAmI", "/actuator/**").permitAll()
-                        .anyRequest().authenticated()
-                )
+                        .requestMatchers("/auth/login", "/auth/register", "/h2-console", "/h2-console/**", "/health",
+                                "/WhatAmI", "/actuator/**")
+                        .permitAll()
+                        .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
