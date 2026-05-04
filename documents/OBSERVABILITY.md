@@ -2,7 +2,7 @@
 
 This document outlines the observability features implemented in the WorkHub project, including health checks, metrics, and distributed tracing via Correlation IDs.
 
-## 1. Health Endpoints (Spring Actuator)
+## 1. Health Main Endpoints (Spring Actuator)
 
 The application uses Spring Boot Actuator to expose health and monitoring information.
 
