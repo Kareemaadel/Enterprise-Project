@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: workhub-app
+  namespace: workhub
+spec:
+  replicas: 2 # Run 2 copies for resilience
+  selector:
+    matchLabels:
+      app: workhub-app
+  template:
+    metadata:
+      labels:
+        app: workhub-app
+    spec:
+      containers:
+        - name: workhub-app
+          image: workhub:latest #Docker image name
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+
+          # Load non-sensitive config from ConfigMap
+          envFrom:
+            - configMapRef:
+                name: workhub-config
+
+          # Load sensitive config from Secret
+          env:
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: workhub-secret
+                  key: SPRING_DATASOURCE_PASSWORD
+
+          # ── Liveness Probe ──────────────────────────────────────
+          # Kubernetes restarts the pod if this fails
+          # Points to Spring Actuator's liveness endpoint
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 45 # Give Spring Boot time to start
+            periodSeconds: 15
+            failureThreshold: 3
+
+          # ── Readiness Probe ─────────────────────────────────────
+          # Kubernetes stops sending traffic if this fails
+          # Points to Spring Actuator's readiness endpoint
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
