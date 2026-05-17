@@ -85,7 +85,7 @@ public class TenantIsolationIntegrationTest {
         // Fetch to see what was saved in DB
         Optional<Project> retrieved = projectRepository.findById(project.getId());
         assertThat(retrieved).isPresent();
-        assertThat(retrieved.get().getTenantId()).isEqualTo(tenantA.getId().toString());
+        assertThat(retrieved.get().getTenantId()).isEqualTo(tenantA.getId());
     }
 
     @Test

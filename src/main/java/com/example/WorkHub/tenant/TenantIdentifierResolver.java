@@ -7,18 +7,19 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 @Component
-public class TenantIdentifierResolver implements CurrentTenantIdentifierResolver<String> {
+public class TenantIdentifierResolver implements CurrentTenantIdentifierResolver<java.util.UUID> {
 
-    private static final String SYSTEM_TENANT = "00000000-0000-0000-0000-000000000000";
+    private static final java.util.UUID SYSTEM_TENANT = java.util.UUID.fromString(
+            "00000000-0000-0000-0000-000000000000");
 
     @Override
-    public String resolveCurrentTenantIdentifier() {
+    public java.util.UUID resolveCurrentTenantIdentifier() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth instanceof TenantAuthenticationToken tenantAuth) {
             java.util.UUID tenantId = tenantAuth.getTenantId();
             if (tenantId != null) {
                 System.out.println("RESOLVER: Found tenant " + tenantId);
-                return tenantId.toString();
+                return tenantId;
             }
         }
         System.out.println("RESOLVER: Fallback to SYSTEM");

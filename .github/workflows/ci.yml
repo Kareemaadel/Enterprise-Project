@@ -48,5 +48,8 @@ jobs:
           SPRING_JPA_HIBERNATE_DDL_AUTO: update
           SPRING_KAFKA_BOOTSTRAP_SERVERS: localhost:9092
 
+      - name: Build application
+        run: mvn -DskipTests package
+
       - name: Build Docker image
         run: docker build -t workhub:${{ github.sha }} .

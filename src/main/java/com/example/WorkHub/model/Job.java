@@ -19,9 +19,8 @@ public class Job {
     private Project project;
 
     @org.hibernate.annotations.TenantId
-    @Convert(converter = com.example.WorkHub.tenant.UuidStringConverter.class)
-    @Column(name = "tenant_id", length = 36)
-    private String tenantId;
+    @Column(name = "tenant_id", nullable = false)
+    private UUID tenantId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tenant_id", insertable = false, updatable = false)
@@ -59,7 +58,7 @@ public class Job {
     }
 
     // No public setter for tenantId to prevent manual overriding
-    public String getTenantId() {
+    public UUID getTenantId() {
         return tenantId;
     }
 }

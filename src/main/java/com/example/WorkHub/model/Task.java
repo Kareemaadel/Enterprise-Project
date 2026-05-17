@@ -23,9 +23,8 @@ public class Task {
     private Project project;
 
     @org.hibernate.annotations.TenantId
-    @Convert(converter = com.example.WorkHub.tenant.UuidStringConverter.class)
-    @Column(name = "tenant_id", length = 36)
-    private String tenantId;
+    @Column(name = "tenant_id", nullable = false)
+    private UUID tenantId;
 
     @com.fasterxml.jackson.annotation.JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
@@ -75,7 +74,7 @@ public class Task {
     }
 
     // No public setter for tenantId to prevent manual overriding
-    public String getTenantId() {
+    public UUID getTenantId() {
         return tenantId;
     }
 
