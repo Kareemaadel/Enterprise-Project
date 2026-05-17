@@ -16,6 +16,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -70,14 +72,23 @@ public class ReportService {
         job.setProject(project);
         job = jobRepository.save(job);
 
-        // Publish event to Kafka
-        ReportRequestEvent event = new ReportRequestEvent(
-                job.getId(),
-                projectId,
-                tenantId,
-                requestedBy
-        );
-        reportProducer.sendReportRequest(event);
+                // Publish event to Kafka after commit so consumers can see the Job row
+                ReportRequestEvent event = new ReportRequestEvent(
+                                job.getId(),
+                                projectId,
+                                tenantId,
+                                requestedBy
+                );
+                if (TransactionSynchronizationManager.isActualTransactionActive()) {
+                        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                                @Override
+                                public void afterCommit() {
+                                        reportProducer.sendReportRequest(event);
+                                }
+                        });
+                } else {
+                        reportProducer.sendReportRequest(event);
+                }
 
         logger.info("Report generation enqueued: jobId={}, projectId={}, tenantId={}",
                 job.getId(), projectId, tenantId);
