@@ -2,6 +2,7 @@ package com.example.WorkHub.messaging;
 
 import com.example.WorkHub.config.KafkaConfig;
 import com.example.WorkHub.dto.ReportRequestEvent;
+import com.example.WorkHub.jwt.TenantAuthenticationToken;
 import com.example.WorkHub.model.Job;
 import com.example.WorkHub.model.ProcessedMessage;
 import com.example.WorkHub.repository.JobRepository;
@@ -10,8 +11,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
 
 /**
  * Kafka consumer that processes report generation requests.
@@ -59,40 +62,48 @@ public class ReportConsumer {
             return; // skip poison pill messages
         }
 
-        String messageKey = event.jobId().toString();
+        TenantAuthenticationToken auth = new TenantAuthenticationToken(
+                event.requestedBy(), null, event.tenantId(), List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
-        // Idempotency check: skip if already processed
-        if (processedMessageRepository.existsById(messageKey)) {
-            logger.info("Message with key {} already processed, skipping (idempotent)", messageKey);
-            return;
-        }
-
-        logger.info("Processing report request for job {} (project={}, tenant={})",
-                event.jobId(), event.projectId(), event.tenantId());
-
-        // Look up the Job entity
-        Job job = jobRepository.findById(event.jobId()).orElse(null);
-        if (job == null) {
-            logger.warn("Job {} not found, skipping", event.jobId());
-            return;
-        }
-
-        // Simulate report generation work
         try {
-            Thread.sleep(2000); // simulate 2 seconds of processing
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.warn("Report generation interrupted for job {}", event.jobId());
-            return;
+            String messageKey = event.jobId().toString();
+
+            // Idempotency check: skip if already processed
+            if (processedMessageRepository.existsById(messageKey)) {
+                logger.info("Message with key {} already processed, skipping (idempotent)", messageKey);
+                return;
+            }
+
+            logger.info("Processing report request for job {} (project={}, tenant={})",
+                    event.jobId(), event.projectId(), event.tenantId());
+
+            // Look up the Job entity
+            Job job = jobRepository.findById(event.jobId()).orElse(null);
+            if (job == null) {
+                logger.warn("Job {} not found, skipping", event.jobId());
+                return;
+            }
+
+            // Simulate report generation work
+            try {
+                Thread.sleep(2000); // simulate 2 seconds of processing
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.warn("Report generation interrupted for job {}", event.jobId());
+                return;
+            }
+
+            // Mark job as completed
+            job.setStatus("COMPLETED");
+            jobRepository.save(job);
+
+            // Record the message as processed (idempotency)
+            processedMessageRepository.save(new ProcessedMessage(messageKey));
+
+            logger.info("Report generation COMPLETED for job {}", event.jobId());
+        } finally {
+            SecurityContextHolder.clearContext();
         }
-
-        // Mark job as completed
-        job.setStatus("COMPLETED");
-        jobRepository.save(job);
-
-        // Record the message as processed (idempotency)
-        processedMessageRepository.save(new ProcessedMessage(messageKey));
-
-        logger.info("Report generation COMPLETED for job {}", event.jobId());
     }
 }
