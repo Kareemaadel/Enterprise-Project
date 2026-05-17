@@ -101,11 +101,22 @@ public class MessagingReliabilityTest {
     void publishReport_consumerProcesses_jobCompletedInDb() {
         Job job = reportService.enqueueReportGeneration(testProject.getId());
 
+        TenantAuthenticationToken auth = new TenantAuthenticationToken(
+                "user@example.com", null, testTenant.getId(), List.of());
+
         Awaitility.await()
+                .pollInSameThread()
                 .atMost(20, TimeUnit.SECONDS)
-                .until(() -> jobRepository.findById(job.getId())
-                        .map(j -> "COMPLETED".equals(j.getStatus()))
-                        .orElse(false));
+                .until(() -> {
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                    try {
+                        return jobRepository.findById(job.getId())
+                                .map(j -> "COMPLETED".equals(j.getStatus()))
+                                .orElse(false);
+                    } finally {
+                        SecurityContextHolder.clearContext();
+                    }
+                });
 
         Job finalJob = jobRepository.findById(job.getId()).orElseThrow();
         assertEquals("COMPLETED", finalJob.getStatus());
@@ -124,11 +135,22 @@ public class MessagingReliabilityTest {
         );
         reportProducer.sendReportRequest(duplicateEvent);
 
+        TenantAuthenticationToken auth = new TenantAuthenticationToken(
+            "user@example.com", null, testTenant.getId(), List.of());
+
         Awaitility.await()
+            .pollInSameThread()
                 .atMost(20, TimeUnit.SECONDS)
-                .until(() -> jobRepository.findById(job.getId())
-                        .map(j -> "COMPLETED".equals(j.getStatus()))
-                        .orElse(false));
+            .until(() -> {
+                SecurityContextHolder.getContext().setAuthentication(auth);
+                try {
+                return jobRepository.findById(job.getId())
+                    .map(j -> "COMPLETED".equals(j.getStatus()))
+                    .orElse(false);
+                } finally {
+                SecurityContextHolder.clearContext();
+                }
+            });
 
         assertTrue(processedMessageRepository.existsById(job.getId().toString()));
         
