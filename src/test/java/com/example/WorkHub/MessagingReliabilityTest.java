@@ -118,8 +118,13 @@ public class MessagingReliabilityTest {
                     }
                 });
 
-        Job finalJob = jobRepository.findById(job.getId()).orElseThrow();
-        assertEquals("COMPLETED", finalJob.getStatus());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+        try {
+            Job finalJob = jobRepository.findById(job.getId()).orElseThrow();
+            assertEquals("COMPLETED", finalJob.getStatus());
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 
     @Test
