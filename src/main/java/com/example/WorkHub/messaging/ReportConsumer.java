@@ -52,7 +52,6 @@ public class ReportConsumer {
      * @param message the raw JSON message from Kafka
      */
     @KafkaListener(topics = KafkaConfig.REPORT_TOPIC, groupId = "workhub-report-group")
-    @Transactional
     public void consume(String message) {
         ReportRequestEvent event;
         try {
@@ -67,43 +66,48 @@ public class ReportConsumer {
         SecurityContextHolder.getContext().setAuthentication(auth);
 
         try {
-            String messageKey = event.jobId().toString();
-
-            // Idempotency check: skip if already processed
-            if (processedMessageRepository.existsById(messageKey)) {
-                logger.info("Message with key {} already processed, skipping (idempotent)", messageKey);
-                return;
-            }
-
-            logger.info("Processing report request for job {} (project={}, tenant={})",
-                    event.jobId(), event.projectId(), event.tenantId());
-
-            // Look up the Job entity
-            Job job = jobRepository.findById(event.jobId()).orElse(null);
-            if (job == null) {
-                logger.warn("Job {} not found, skipping", event.jobId());
-                return;
-            }
-
-            // Simulate report generation work
-            try {
-                Thread.sleep(2000); // simulate 2 seconds of processing
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                logger.warn("Report generation interrupted for job {}", event.jobId());
-                return;
-            }
-
-            // Mark job as completed
-            job.setStatus("COMPLETED");
-            jobRepository.save(job);
-
-            // Record the message as processed (idempotency)
-            processedMessageRepository.save(new ProcessedMessage(messageKey));
-
-            logger.info("Report generation COMPLETED for job {}", event.jobId());
+            handleEvent(event);
         } finally {
             SecurityContextHolder.clearContext();
         }
+    }
+
+    @Transactional
+    protected void handleEvent(ReportRequestEvent event) {
+        String messageKey = event.jobId().toString();
+
+        // Idempotency check: skip if already processed
+        if (processedMessageRepository.existsById(messageKey)) {
+            logger.info("Message with key {} already processed, skipping (idempotent)", messageKey);
+            return;
+        }
+
+        logger.info("Processing report request for job {} (project={}, tenant={})",
+                event.jobId(), event.projectId(), event.tenantId());
+
+        // Look up the Job entity
+        Job job = jobRepository.findById(event.jobId()).orElse(null);
+        if (job == null) {
+            logger.warn("Job {} not found, skipping", event.jobId());
+            return;
+        }
+
+        // Simulate report generation work
+        try {
+            Thread.sleep(2000); // simulate 2 seconds of processing
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.warn("Report generation interrupted for job {}", event.jobId());
+            return;
+        }
+
+        // Mark job as completed
+        job.setStatus("COMPLETED");
+        jobRepository.save(job);
+
+        // Record the message as processed (idempotency)
+        processedMessageRepository.save(new ProcessedMessage(messageKey));
+
+        logger.info("Report generation COMPLETED for job {}", event.jobId());
     }
 }
