@@ -46,16 +46,18 @@ public class SecurityBeansConfig {
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint((request, response, authException) -> {
+                            logger.error("AuthenticationEntryPoint triggered: {}", authException.getMessage());
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                             response.getWriter().write(
                                     "{\"error\": \"Unauthorized\", \"message\": \"Authentication is required to access this resource.\"}");
                         })
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
-                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            logger.error("AccessDeniedHandler triggered: {}", accessDeniedException.getMessage());
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                             response.getWriter().write(
-                                    "{\"error\": \"Unauthorized\", \"message\": \"You do not have permission to access this resource.\"}");
+                                    "{\"error\": \"Forbidden\", \"message\": \"You do not have permission to access this resource.\"}");
                         }))
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()

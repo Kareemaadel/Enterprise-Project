@@ -43,4 +43,14 @@ public class ProjectService {
         return projectRepository.findById(id)
                 .orElseThrow(() -> new com.example.WorkHub.exception.ResourceNotFoundException(Project.class, id));
     }
+
+    @Transactional
+    public Project createProjectAndFail(String name) {
+        Project project = new Project();
+        project.setName(name);
+        project.setCreatedBy("test@test.com");
+        projectRepository.save(project);
+        // Force a rollback by throwing after the save
+        throw new RuntimeException("Simulated failure — transaction must roll back");
+    }
 }

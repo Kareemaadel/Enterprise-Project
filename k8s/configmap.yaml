@@ -6,5 +6,7 @@ metadata:
 data:
   SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres-service:5432/workhub"
   SPRING_DATASOURCE_USERNAME: "workhub_user"
+  SPRING_DATASOURCE_DRIVER_CLASS_NAME: "org.postgresql.Driver"
+  SPRING_JPA_DATABASE_PLATFORM: "org.hibernate.dialect.PostgreSQLDialect"
   SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka-service:9092"
   SPRING_JPA_HIBERNATE_DDL_AUTO: "update"

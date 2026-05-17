@@ -18,6 +18,8 @@ import java.time.OffsetDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import jakarta.persistence.Table;
 import java.util.UUID;
@@ -25,6 +27,7 @@ import java.util.UUID;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
     private final JdbcTemplate jdbcTemplate;
 
     public GlobalExceptionHandler(JdbcTemplate jdbcTemplate) {
@@ -87,9 +90,12 @@ public class GlobalExceptionHandler {
             HttpMessageNotReadableException ex,
             HttpServletRequest request) {
 
+        String message = ex.getMostSpecificCause().getMessage();
+        logger.warn("Message not readable: {}", message);
+
         ApiError error = buildError(
                 HttpStatus.BAD_REQUEST,
-                "Invalid value in request body. Accepted task statuses are: P, IP, C",
+                "Invalid request body format: " + message,
                 request,
                 null);
 
@@ -131,12 +137,12 @@ public class GlobalExceptionHandler {
             HttpServletRequest request) {
 
         ApiError error = buildError(
-                HttpStatus.UNAUTHORIZED,
+                HttpStatus.FORBIDDEN,
                 "You do not have permission to access this resource.",
                 request,
                 null);
 
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
     }
 
     @ExceptionHandler(Exception.class)
@@ -144,9 +150,11 @@ public class GlobalExceptionHandler {
             Exception ex,
             HttpServletRequest request) {
 
+        logger.error("Unexpected error occurred at {}: {}", request.getRequestURI(), ex.getMessage(), ex);
+
         ApiError error = buildError(
                 HttpStatus.INTERNAL_SERVER_ERROR,
-                "Unexpected server error",
+                "Unexpected server error: " + ex.getMessage(),
                 request,
                 null);
 

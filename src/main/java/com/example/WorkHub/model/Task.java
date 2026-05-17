@@ -27,6 +27,7 @@ public class Task {
     @Column(name = "tenant_id", length = 36)
     private String tenantId;
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tenant_id", insertable = false, updatable = false)
     private Tenant tenant;

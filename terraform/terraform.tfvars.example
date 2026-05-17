@@ -1,0 +1,6 @@
+kubeconfig_path = "~/.kube/config"
+kube_context    = "minikube"
+namespace       = "workhub"
+db_password     = "REPLACE_ME"
+app_image       = "workhub:latest"
+replicas        = 2
