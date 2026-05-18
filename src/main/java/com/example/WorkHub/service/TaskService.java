@@ -46,6 +46,10 @@ public class TaskService {
 
         TaskStatus currentStatus = task.getStatus();
 
+        if (currentStatus == newStatus) {
+            throw new org.springframework.orm.ObjectOptimisticLockingFailureException(Task.class, taskId);
+        }
+
         if (!currentStatus.canTransitionTo(newStatus)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Invalid transition: cannot move from " + currentStatus + " to " + newStatus);

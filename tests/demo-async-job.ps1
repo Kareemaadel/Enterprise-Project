@@ -1,44 +1,55 @@
 # WorkHub - Async Job Creation and Completion Demo Script (PowerShell Version)
 # Make sure the application and Kafka are running before executing this script.
 
-$BaseUrl = "http://localhost:8080"
+$BaseUrl = "http://localhost"
 Write-Host "======================================================" -ForegroundColor Cyan
 Write-Host "WorkHub Async Job Demo" -ForegroundColor Cyan
 Write-Host "======================================================" -ForegroundColor Cyan
 Write-Host ""
 
 # 1. Read Tenant ID from the seeder file
-if (-not (Test-Path ".tenant_ids.txt")) {
+$SeederPath = "$PSScriptRoot/../.tenant_ids.txt"
+if (-not (Test-Path $SeederPath)) {
     Write-Host "Error: .tenant_ids.txt not found. Ensure the application has started and seeded the data." -ForegroundColor Red
     exit 1
 }
-$TenantId = Get-Content ".tenant_ids.txt" -Raw
+$TenantId = Get-Content $SeederPath -Raw
 $TenantId = $TenantId.Trim()
 Write-Host "1. Using Seeded Tenant ID: $TenantId"
 
 # 2. Register/Login as a TENANT_ADMIN user
 Write-Host "2. Authenticating as Admin User..."
-$RegisterBody = @{
+$Payload = @{
     email = "admin_demo@workhub.local"
     password = "password123"
     tenantId = $TenantId
     tenantRole = "TENANT_ADMIN"
 } | ConvertTo-Json
 
+$TempFile = "$PSScriptRoot/auth_temp.json"
+$Payload | Out-File -FilePath $TempFile -Encoding utf8
+
 try {
     # Try to register
-    $Token = Invoke-RestMethod -Uri "$BaseUrl/auth/register" -Method Post -Body $RegisterBody -ContentType "application/json"
+    $Token = curl.exe -s -X POST -H "Content-Type: application/json" -d "@$TempFile" "$BaseUrl/auth/register"
+    if ($Token -match "error" -or $Token -eq "") {
+        throw "Registration failed or user already exists"
+    }
 } catch {
-    # If registration fails (e.g. user exists), try to login
-    $LoginBody = @{
+    # If registration fails, try to login
+    $LoginPayload = @{
         email = "admin_demo@workhub.local"
         password = "password123"
     } | ConvertTo-Json
-    
-    # Note: AuthController uses GET for login with request body in this implementation
-    $Token = Invoke-RestMethod -Uri "$BaseUrl/auth/login" -Method Get -Body $LoginBody -ContentType "application/json"
+    $LoginPayload | Out-File -FilePath $TempFile -Encoding utf8
+    $Token = curl.exe -s -X GET -H "Content-Type: application/json" -d "@$TempFile" "$BaseUrl/auth/login"
+} finally {
+    if (Test-Path $TempFile) {
+        Remove-Item -Path $TempFile -Force
+    }
 }
 
+$Token = $Token.Trim()
 Write-Host "   JWT Token Received: $($Token.Substring(0, 20))..."
 
 # 3. Create a Project
@@ -93,8 +104,9 @@ while ($Attempt -le $MaxRetries) {
 
 Write-Host ""
 if ($FinalStatus -eq "COMPLETED") {
-    Write-Host "✅ SUCCESS: Async Job completed successfully via Kafka messaging!" -ForegroundColor Green
+    Write-Host "   [OK] SUCCESS: Async Job completed successfully via Kafka messaging!" -ForegroundColor Green
 } else {
-    Write-Host "❌ TIMEOUT: Async Job did not complete within expected time. Check Kafka logs." -ForegroundColor Red
+    Write-Host "   [FAIL] TIMEOUT: Async Job did not complete within expected time. Check Kafka logs." -ForegroundColor Red
+    exit 1
 }
 Write-Host "======================================================" -ForegroundColor Cyan

@@ -22,14 +22,26 @@ variable "db_password" {
   description = "Database password"
 }
 
-variable "app_image" {
+variable "stable_image" {
   type        = string
-  default     = "workhub:latest"
-  description = "Docker image for the WorkHub app"
+  default     = "workhub:1.0.0"
+  description = "Docker image for the stable WorkHub app"
 }
 
-variable "replicas" {
+variable "canary_image" {
+  type        = string
+  default     = "workhub:2.0.0"
+  description = "Docker image for the canary WorkHub app"
+}
+
+variable "total_replicas" {
   type        = number
-  default     = 2
-  description = "Number of app replicas"
+  default     = 5
+  description = "Total number of app replicas to run"
+}
+
+variable "canary_ratio" {
+  type        = number
+  default     = 0.20
+  description = "Percentage of pods running the canary release"
 }

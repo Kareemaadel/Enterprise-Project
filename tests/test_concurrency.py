@@ -4,8 +4,8 @@ import uuid
 import sys
 import os
 
-BASE_URL = "http://localhost:8080"
-TENANT_FILE = ".tenant_ids.txt"
+BASE_URL = "http://localhost"
+TENANT_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".tenant_ids.txt"))
 
 def run_test():
     # Make sure the app is spun up and the file is there
@@ -28,7 +28,8 @@ def run_test():
     register_resp = requests.post(f"{BASE_URL}/auth/register", json={
         "email": random_email,
         "password": password,
-        "tenantId": tenant_id
+        "tenantId": tenant_id,
+        "tenantRole": "TENANT_ADMIN"
     })
     
     if register_resp.status_code not in (200, 201):
@@ -97,9 +98,9 @@ def run_test():
     print("\nNotice how one thread succeeds (200 OK), and the other gets 409 Conflict not because the client chose a bad transition, but because the optimistic lock version changed under it (a concurrent modification). The error message distinguishes this from an invalid state machine transition.")
     print("The database rejected the second thread because the version changed, triggering a rollback")
 
-    # Cleanup 
-    os.remove(TENANT_FILE)
-    print("\nCleaned up .tenant_ids.txt")
+    # Cleanup (Disabled in this version to keep seeder file alive)
+    # os.remove(TENANT_FILE)
+    # print("\nCleaned up .tenant_ids.txt")
 
 if __name__ == "__main__":
     run_test()

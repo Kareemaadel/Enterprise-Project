@@ -9,6 +9,6 @@ output "app_service_name" {
 }
 
 output "app_replicas" {
-  value       = var.replicas
+  value       = var.total_replicas
   description = "Number of replicas deployed"
 }
