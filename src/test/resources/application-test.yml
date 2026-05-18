@@ -1,4 +1,6 @@
 spring:
+  tenancy:
+    mode: discriminator
   kafka:
     bootstrap-servers: localhost:9092
   autoconfigure:

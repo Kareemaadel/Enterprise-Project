@@ -2,7 +2,9 @@ package com.example.WorkHub.config;
 
 import com.example.WorkHub.model.Tenant;
 import com.example.WorkHub.repository.TenantRepository;
+import com.example.WorkHub.tenant.TenantSchemaManager;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,9 +18,12 @@ import java.util.stream.Collectors;
 public class TenantDataSeeder implements CommandLineRunner {
 
     private final TenantRepository tenantRepository;
+    private final TenantSchemaManager tenantSchemaManager;
 
-    public TenantDataSeeder(TenantRepository tenantRepository) {
+    public TenantDataSeeder(TenantRepository tenantRepository,
+                            ObjectProvider<TenantSchemaManager> tenantSchemaManagerProvider) {
         this.tenantRepository = tenantRepository;
+        this.tenantSchemaManager = tenantSchemaManagerProvider.getIfAvailable();
     }
 
     @Override
@@ -46,6 +51,11 @@ public class TenantDataSeeder implements CommandLineRunner {
 
         if (!missingTenants.isEmpty()) {
             tenantRepository.saveAll(missingTenants);
+        }
+
+        if (tenantSchemaManager != null) {
+            tenantRepository.findAll()
+                    .forEach(tenant -> tenantSchemaManager.ensureTenantSchema(tenant.getId()));
         }
 
         // Dump a tenant ID into a file for automated testing scripts

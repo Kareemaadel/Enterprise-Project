@@ -1,6 +1,8 @@
 spring:
   application:
     name: WorkHub
+  tenancy:
+    mode: schema
   datasource:
     url: jdbc:h2:~/testdb
     driverClassName: org.h2.Driver
@@ -13,8 +15,6 @@ spring:
       ddl-auto: update
     properties:
       hibernate:
-        multiTenancy: DISCRIMINATOR
-        tenant_identifier_resolver: com.example.WorkHub.tenant.TenantIdentifierResolver
   h2:
     console:
       enabled: true

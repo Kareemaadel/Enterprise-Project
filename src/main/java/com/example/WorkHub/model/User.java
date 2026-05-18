@@ -5,7 +5,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.UUID;
 
 @Entity
-@Table(name = "users")
+@Table(schema = "public", name = "users")
 public class User {
 
     @Id
